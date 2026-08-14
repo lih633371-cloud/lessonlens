@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LessonLens · 课件质量诊断（演示版）</title>
+<style>
+  :root{
+    --primary: #EA580C;
+    --primary-dark: #C2410C;
+    --bg: #FFF7ED;
+    --card-bg: #ffffff;
+    --line: #FED7AA;
+    --text: #1C1917;
+    --text-soft: #78716C;
+    --shadow: 0 1px 2px rgba(28,25,23,0.04), 0 8px 24px rgba(28,25,23,0.07);
+    --green: #10B981;
+    --amber: #F59E0B;
+    --red: #EF4444;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:22px 28px;
+    background:#fff;
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .mark{
+    width:44px; height:44px; border-radius:11px;
+    background:var(--primary);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:18px;
+    flex-shrink:0;
+  }
+  .brand-name{ font-weight:800; font-size:17px; letter-spacing:0.2px; color:var(--text);}
+  .brand-sub{ font-size:12.5px; color:var(--text-soft); margin-top:1px;}
+  .demo-badge{
+    margin-left:auto; font-size:11.5px; font-weight:700; padding:6px 14px;
+    background:#FEF3C7; color:#92400E; border-radius:100px; border:1px solid #FDE68A;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:44px 24px 90px;}
+
+  h1.hero{
+    font-weight:800;
+    font-size:clamp(24px, 3.6vw, 34px);
+    text-align:center; line-height:1.35; margin:0 0 14px; color:var(--text);
+  }
+  p.hero-sub{
+    text-align:center; color:var(--text-soft); font-size:15px; line-height:1.75;
+    max-width:600px; margin:0 auto 20px;
+  }
+  .demo-note{
+    max-width:600px; margin:0 auto 36px; padding:14px 18px;
+    background:#FFF7ED; border:1px solid var(--line); border-radius:11px;
+    font-size:13px; color:var(--primary-dark); line-height:1.7; text-align:center;
+  }
+
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+  }
+  .form-card{ padding:32px 32px 28px; }
+  .form-title{ font-size:16px; font-weight:700; margin:0 0 18px; color:var(--text); display:flex; align-items:center; gap:8px;}
+
+  label{ display:block; font-size:13px; color:var(--text-soft); margin-bottom:8px; font-weight:600;}
+  select{
+    width:100%; padding:13px 15px; font-size:14.5px;
+    border:1px solid var(--line); border-radius:10px;
+    background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2378716C" stroke-width="2"><path d="M7 10l5 5 5-5"/></svg>') no-repeat right 14px center;
+    appearance:none; -webkit-appearance:none;
+    color:var(--text); font-family:inherit;
+  }
+  select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(234,88,12,0.12);}
+
+  button#submit{
+    width:100%; margin-top:20px; padding:15px;
+    background:var(--primary); color:#fff; border:none; border-radius:10px;
+    font-size:15.5px; font-weight:700; font-family:inherit;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px;
+    transition:background .15s, transform .12s;
+  }
+  button#submit:hover{ background:var(--primary-dark); }
+  button#submit:active{ transform:scale(0.985); }
+
+  .foot-note{
+    border-top:1px solid var(--line); margin-top:20px; padding-top:14px;
+    font-size:12px; color:#A8A29E; line-height:1.8;
+  }
+
+  .loading-shell{ margin-top:26px; padding:60px 30px; text-align:center;}
+  .spinner{
+    width:36px; height:36px; margin:0 auto 20px;
+    border-radius:50%;
+    border:3px solid #FED7AA;
+    border-top-color:var(--primary);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .loading-title{ font-weight:700; font-size:15.5px; color:var(--text); margin-bottom:6px;}
+  .loading-sub{ color:var(--text-soft); font-size:13px;}
+
+  .empty-shell{ margin-top:26px; padding:64px 30px; text-align:center;}
+  .empty-icon{
+    width:60px; height:60px; margin:0 auto 20px;
+    border-radius:50%; background:#FFEDD5;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--primary);
+  }
+  .empty-title{ font-weight:700; font-size:15.5px; margin-bottom:6px; color:var(--text);}
+  .empty-sub{ color:var(--text-soft); font-size:13px;}
+
+  .result{ margin-top:28px; }
+  .result-cols{ display:flex; gap:20px; align-items:flex-start; }
+  .col-radar{ width:50%; }
+  .col-detail{ width:50%; }
+  @media (max-width:820px){
+    .result-cols{ flex-direction:column; }
+    .col-radar, .col-detail{ width:100%; }
+  }
+
+  .panel{ padding:26px 28px; }
+  .panel-label{
+    font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    color:var(--text-soft); margin-bottom:16px;
+  }
+
+  .radar-svg-wrap{ width:100%; }
+  .radar-svg-wrap svg{ width:100%; height:auto; display:block; }
+
+  .score-big{ text-align:center; margin-top:8px; }
+  .score-num{
+    font-size:54px; font-weight:900; line-height:1;
+    background:linear-gradient(135deg, var(--primary), #FB923C);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .score-label{ font-size:13px; color:var(--text-soft); margin-top:6px; font-weight:600;}
+
+  .dim-card{
+    padding:14px 16px; border:1px solid var(--line); border-radius:10px;
+    margin-bottom:10px; background:#FFFBF7;
+  }
+  .dim-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+  .dim-name{ font-size:13.5px; font-weight:700; color:var(--text);}
+  .dim-score{ font-size:13px; font-weight:800; padding:2px 10px; border-radius:100px; color:#fff; }
+  .dim-reason{ font-size:12.5px; color:var(--text-soft); line-height:1.65;}
+
+  .score-high{ background:var(--green); }
+  .score-mid{ background:var(--amber); }
+  .score-low{ background:var(--red); }
+
+  .suggestion-card{
+    padding:16px 18px; border:1px solid var(--line); border-radius:11px;
+    margin-bottom:12px; background:#fff;
+  }
+  .sg-row{ display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; font-size:13px; line-height:1.7;}
+  .sg-row:last-of-type{ margin-bottom:0; }
+  .sg-tag{ flex-shrink:0; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:6px; color:#fff; margin-top:1px;}
+  .sg-tag.problem{ background:var(--red); }
+  .sg-tag.solution{ background:var(--green); }
+  .sg-text{ color:#334155; flex:1; }
+  .sg-expected{ font-size:12px; color:var(--text-soft); margin-top:6px; padding-top:8px; border-top:1px dashed var(--line);}
+
+  .section-label{
+    font-size:12.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    color:var(--text-soft); margin:26px 0 14px;
+  }
+  .section-label:first-child{ margin-top:0; }
+
+  footer{ text-align:center; color:#A8A29E; font-size:12px; padding:36px 0 44px; }
+
+  @media (max-width:640px){
+    .form-card{ padding:24px 20px 20px; }
+    .panel{ padding:22px 20px; }
+    .demo-badge{ margin-left:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mark">L</div>
+  <div>
+    <div class="brand-name">LessonLens</div>
+    <div class="brand-sub">课件质量诊断</div>
+  </div>
+  <div class="demo-badge">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+    产品原型演示
+  </div>
+</div>
+
+<div class="wrap">
+  <h1 class="hero">课件写得怎么样？让 AI 帮你诊断五个维度</h1>
+  <p class="hero-sub">粘贴你的教案或课件文本，AI 从教学目标对齐度、认知负荷、互动设计、视觉层次、风格一致性五个维度打分，并给出具体改进建议。</p>
+  <div class="demo-note">
+    📌 这是产品原型演示版本：下拉选择课件样本后展示预生成的诊断结果，用于展示交互设计与产品逻辑。完整版接入实时 AI 分析能力。
+  </div>
+
+  <div class="card form-card">
+    <div class="form-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6M9 16h6M9 8h6"/><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      选择课件样本
+    </div>
+
+    <label for="demoSelect">课件样本（演示版提供以下 2 个预设示例）</label>
+    <select id="demoSelect">
+      <option value="0">结构完整型课件 · 写景作文教案</option>
+      <option value="1">互动不足型课件 · 分数概念课件</option>
+    </select>
+
+    <button id="submit">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <span id="btnLabel">诊断课件质量</span>
+    </button>
+
+    <div class="foot-note">
+      五维评分框架 × 视听语言分析 × 结构化改进建议 · 演示版内置示例数据
+    </div>
+  </div>
+
+  <div id="resultArea">
+    <div class="card empty-shell" id="emptyState">
+      <div class="empty-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21 7.5 13.5 2 9h7z"/></svg>
+      </div>
+      <div class="empty-title">等待选择</div>
+      <div class="empty-sub">从上方下拉菜单选择一个课件样本，查看诊断结果</div>
+    </div>
+  </div>
+
+  <footer>LessonLens · 教育场景探索 · 独立开发 · 2025</footer>
+</div>
+
+<script>
+const DIM_LABELS = ['教学目标对齐度','认知负荷分布','互动设计密度','视觉层次清晰度','风格一致性'];
+
+const DEMO_DATA = [
+{
+  "overall_score": 82,
+  "dimensions": [
+    { "name": "教学目标对齐度", "score": 9, "reason": "全程围绕「观察层次」这一教学目标展开，导入、讲解、练习均紧密呼应，没有偏离。" },
+    { "name": "认知负荷分布", "score": 7, "reason": "概念讲解环节15分钟内引入两组新概念（景别对照、镜头运动），信息密度略高，建议拆分。" },
+    { "name": "互动设计密度", "score": 8, "reason": "设置了小组标注、练习分享等环节，互动形式多样，但导入环节互动较弱。" },
+    { "name": "视觉层次清晰度", "score": 9, "reason": "教案结构分明，每个环节标注时长，表格化呈现景别对照关系，重点突出。" },
+    { "name": "风格一致性", "score": 8, "reason": "全程使用「镜头/景别」这套统一的类比语言，术语前后一致，没有混用其他体系。" }
+  ],
+  "radar_data": [9, 7, 8, 9, 8],
+  "suggestions": [
+    {
+      "problem": "概念讲解环节（15分钟）一次性引入「景别→观察层次」和「镜头运动→观察顺序」两组映射关系，三年级学生短时间内消化两套新概念容易混淆。",
+      "solution": "将15分钟讲解拆分为两个7-8分钟的小环节，中间插入1分钟快速问答巩固第一组概念，再引入第二组。",
+      "expected": "分段消化降低认知负荷，问答环节还能让教师及时发现理解偏差。"
+    },
+    {
+      "problem": "导入环节（5分钟）以教师提问为主，学生只是被动回答，缺少动手或动身参与的设计。",
+      "solution": "把导入改为「学生自己描述一个镜头画面」的小活动，比如请1-2位学生现场口述一个简单场景，全班判断这是远景还是特写。",
+      "expected": "导入阶段就让学生进入主动思考状态，为后续概念讲解做好铺垫。"
+    },
+    {
+      "problem": "练习环节（10分钟）只设计了个人练笔，没有明确的生生互动反馈机制。",
+      "solution": "练笔完成后增加1-2分钟同桌互评，用「你能看出我写的是什么镜头吗」这样的问题引导互查。",
+      "expected": "同伴反馈能让学生在提交前发现明显问题，同时增加课堂互动密度。"
+    }
+  ]
+},
+{
+  "overall_score": 61,
+  "dimensions": [
+    { "name": "教学目标对齐度", "score": 7, "reason": "教学目标聚焦「分数的初步认识」，内容基本围绕这一目标，但生活应用环节的深度不够，与目标关联略显松散。" },
+    { "name": "认知负荷分布", "score": 5, "reason": "新知讲解环节（12分钟）连续引入平均分、分数读写、分数比较三个概念，缺乏节奏停顿，信息密度偏高。" },
+    { "name": "互动设计密度", "score": 4, "reason": "全程以教师讲授和个人练习为主，仅有一次小组竞赛环节，师生、生生互动明显不足。" },
+    { "name": "视觉层次清晰度", "score": 6, "reason": "教案有基本的环节划分，但部分环节缺少时长标注，重点内容没有用加粗或图示突出。" },
+    { "name": "风格一致性", "score": 7, "reason": "术语使用规范统一，但个别环节口语化描述与书面表达混用，风格不够统一。" }
+  ],
+  "radar_data": [7, 5, 4, 6, 7],
+  "suggestions": [
+    {
+      "problem": "互动设计密度评分仅4分——全课约35分钟中只有1个小组竞赛环节（约10分钟）涉及生生互动，其余时间以教师讲授和个人操作为主，三年级学生持续被动听讲容易走神。",
+      "solution": "在「分数的读写」环节后增加同桌互相出题问答（3-4分钟），在「平均分概念」环节增加小组合作动手分蛋糕（替代教师演示）。",
+      "expected": "把两个原本以教师为中心的环节转为生生互动，预计能把互动密度评分提升到6-7分。"
+    },
+    {
+      "problem": "新知讲解环节12分钟内连续讲授平均分、读写、比较三个新概念，中间没有设置任何巩固检验点，认知负荷偏高。",
+      "solution": "在每个子概念讲完后插入30秒-1分钟的快速手势判断（如「是就举手，不是就摇头」），确认全班跟上后再进入下一个概念。",
+      "expected": "分段确认能及时发现掉队学生，避免后面环节因为前置概念不清而卡壳。"
+    },
+    {
+      "problem": "教案文本部分环节没有标注具体时长（如「生活中的分数调查」环节），难以判断实际课堂节奏是否可控。",
+      "solution": "为每个教学环节补充明确的时长标注，并在教案末尾加一个总时长核对表，确保各环节相加不超过课时总长。",
+      "expected": "时长可视化有助于教师现场把控节奏，也方便后续复盘调整。"
+    }
+  ]
+}
+];
+
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function scoreClass(score){
+  const s = Number(score);
+  if(s >= 8) return 'score-high';
+  if(s >= 5) return 'score-mid';
+  return 'score-low';
+}
+
+function renderRadarChart(radarData){
+  const labels = DIM_LABELS;
+  const n = labels.length;
+  const size = 340;
+  const cx = size/2, cy = size/2;
+  const maxR = 118;
+  const levels = 5;
+
+  function pointFor(i, valueRatio){
+    const angle = (Math.PI * 2 * i) / n - Math.PI/2;
+    const r = maxR * valueRatio;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  }
+
+  let svg = `<svg viewBox="0 0 ${size} ${size+30}" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif">`;
+
+  for(let lvl = 1; lvl <= levels; lvl++){
+    const ratio = lvl / levels;
+    let pts = [];
+    for(let i = 0; i < n; i++){
+      const p = pointFor(i, ratio);
+      pts.push(`${p.x},${p.y}`);
+    }
+    svg += `<polygon points="${pts.join(' ')}" fill="none" stroke="#E7E5E4" stroke-width="1" stroke-dasharray="3,3"/>`;
+  }
+
+  for(let i = 0; i < n; i++){
+    const p = pointFor(i, 1);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#E7E5E4" stroke-width="1"/>`;
+  }
+
+  let dataPts = [];
+  let zeroPts = [];
+  for(let i = 0; i < n; i++){
+    const ratio = Math.max(0, Math.min(10, radarData[i] || 0)) / 10;
+    const p = pointFor(i, ratio);
+    dataPts.push(`${p.x},${p.y}`);
+    const z = pointFor(i, 0.02);
+    zeroPts.push(`${z.x},${z.y}`);
+  }
+
+  svg += `<polygon id="radarFill" points="${zeroPts.join(' ')}" fill="#EA580C" fill-opacity="0.28" stroke="#EA580C" stroke-width="2"/>`;
+
+  for(let i = 0; i < n; i++){
+    const ratio = Math.max(0, Math.min(10, radarData[i] || 0)) / 10;
+    const p = pointFor(i, ratio);
+    svg += `<circle class="radar-dot" data-final-cx="${p.x}" data-final-cy="${p.y}" cx="${cx}" cy="${cy}" r="4" fill="#fff" stroke="#EA580C" stroke-width="2"/>`;
+  }
+
+  for(let i = 0; i < n; i++){
+    const p = pointFor(i, 1.24);
+    let anchor = 'middle';
+    if(p.x < cx - 5) anchor = 'end';
+    else if(p.x > cx + 5) anchor = 'start';
+    svg += `<text x="${p.x}" y="${p.y}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="#57534E">${escapeHtml(labels[i])}</text>`;
+    const val = radarData[i] != null ? radarData[i] : '-';
+    svg += `<text x="${p.x}" y="${p.y+14}" text-anchor="${anchor}" font-size="10.5" font-weight="800" fill="#EA580C">${escapeHtml(String(val))}</text>`;
+  }
+
+  svg += `</svg>`;
+  return { svg, dataPts };
+}
+
+function animateRadar(container, finalPts){
+  requestAnimationFrame(() => {
+    const fill = container.querySelector('#radarFill');
+    const dots = container.querySelectorAll('.radar-dot');
+    if(fill){
+      const steps = 24;
+      let step = 0;
+      const startPts = fill.getAttribute('points').split(' ').map(p => p.split(',').map(Number));
+      const endPts = finalPts.map(p => p.split(',').map(Number));
+      function frame(){
+        step++;
+        const t = Math.min(1, step/steps);
+        const eased = 1 - Math.pow(1-t, 3);
+        const interp = startPts.map((sp, i) => {
+          const ep = endPts[i];
+          return `${sp[0] + (ep[0]-sp[0])*eased},${sp[1] + (ep[1]-sp[1])*eased}`;
+        });
+        fill.setAttribute('points', interp.join(' '));
+        if(t < 1) requestAnimationFrame(frame);
+      }
+      frame();
+    }
+    dots.forEach(dot => {
+      const fx = parseFloat(dot.getAttribute('data-final-cx'));
+      const fy = parseFloat(dot.getAttribute('data-final-cy'));
+      const sx = parseFloat(dot.getAttribute('cx'));
+      const sy = parseFloat(dot.getAttribute('cy'));
+      const steps = 24;
+      let step = 0;
+      function frame(){
+        step++;
+        const t = Math.min(1, step/steps);
+        const eased = 1 - Math.pow(1-t, 3);
+        dot.setAttribute('cx', sx + (fx-sx)*eased);
+        dot.setAttribute('cy', sy + (fy-sy)*eased);
+        if(t < 1) requestAnimationFrame(frame);
+      }
+      frame();
+    });
+  });
+}
+
+function renderResult(data){
+  const radarData = data.radar_data || [0,0,0,0,0];
+  const { svg, dataPts } = renderRadarChart(radarData);
+
+  const dimCards = (data.dimensions||[]).map(d => {
+    const cls = scoreClass(d.score);
+    return `
+      <div class="dim-card">
+        <div class="dim-head">
+          <div class="dim-name">${escapeHtml(d.name)}</div>
+          <div class="dim-score ${cls}">${escapeHtml(String(d.score))}/10</div>
+        </div>
+        <div class="dim-reason">${escapeHtml(d.reason||'')}</div>
+      </div>
+    `;
+  }).join('');
+
+  const suggestionCards = (data.suggestions||[]).map((s, i) => `
+    <div class="suggestion-card">
+      <div class="sg-row">
+        <span class="sg-tag problem">问题 ${i+1}</span>
+        <span class="sg-text">${escapeHtml(s.problem||'')}</span>
+      </div>
+      <div class="sg-row">
+        <span class="sg-tag solution">方案</span>
+        <span class="sg-text">${escapeHtml(s.solution||'')}</span>
+      </div>
+      <div class="sg-expected">预期效果：${escapeHtml(s.expected||'')}</div>
+    </div>
+  `).join('');
+
+  resultArea.innerHTML = `
+    <div class="result">
+      <div class="result-cols">
+        <div class="card panel col-radar">
+          <div class="panel-label">五维诊断雷达图</div>
+          <div class="radar-svg-wrap" id="radarWrap">${svg}</div>
+          <div class="score-big">
+            <div class="score-num">${escapeHtml(String(data.overall_score||'-'))}</div>
+            <div class="score-label">总分（满分 100）</div>
+          </div>
+        </div>
+        <div class="card panel col-detail">
+          <div class="section-label">维度评分详情</div>
+          ${dimCards}
+          <div class="section-label">改进建议</div>
+          ${suggestionCards}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const radarWrap = document.getElementById('radarWrap');
+  animateRadar(radarWrap, dataPts);
+}
+
+function renderLoading(){
+  resultArea.innerHTML = `
+    <div class="card loading-shell">
+      <div class="spinner"></div>
+      <div class="loading-title">正在分析课件质量…</div>
+      <div class="loading-sub">演示版模拟生成过程</div>
+    </div>
+  `;
+}
+
+const submitBtn = document.getElementById('submit');
+const btnLabel = document.getElementById('btnLabel');
+const resultArea = document.getElementById('resultArea');
+const demoSelect = document.getElementById('demoSelect');
+
+submitBtn.addEventListener('click', () => {
+  const idx = parseInt(demoSelect.value, 10);
+  submitBtn.disabled = true;
+  btnLabel.textContent = '诊断中…';
+  renderLoading();
+
+  setTimeout(() => {
+    renderResult(DEMO_DATA[idx]);
+    submitBtn.disabled = false;
+    btnLabel.textContent = '诊断课件质量';
+  }, 900);
+});
+</script>
+
+</body>
+</html>
